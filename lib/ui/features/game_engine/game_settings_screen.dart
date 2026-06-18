@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:party_game/ui/core/theme/app_theme.dart';
 import 'package:party_game/ui/core/widgets/app_button.dart';
 import 'package:party_game/ui/core/widgets/app_scaffold.dart';
+import 'package:party_game/ui/features/game_engine/game_core.dart';
 import 'package:party_game/ui/features/game_engine/game_plugin.dart';
 import 'package:party_game/ui/features/game_engine/game_registry.dart';
 
@@ -35,36 +36,16 @@ class _GameSettingsScreenState extends ConsumerState<GameSettingsScreen> {
         children: [
           Text('Game Settings', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 24),
-
-          _buildTimeSetting(),
+          _ModeSelector(),
           const SizedBox(height: 16),
-
-          _buildRoundsSetting(),
+          if (_settings.mode == GameMode.roundBased) _RoundsSlider(),
+          if (_settings.mode == GameMode.timeBased) _TimeSlider(),
+          const SizedBox(height: 8),
+          _TurnsSlider(),
           const SizedBox(height: 16),
-
-          SwitchListTile(
-            title: const Text('Host Mode'),
-            subtitle: const Text('Host creates the content'),
-            value: _settings.hostMode,
-            activeTrackColor: AppColors.primary,
-            onChanged: (v) => setState(() => _settings.hostMode = v),
-          ),
-
-          if (_settings.hostMode)
-            SwitchListTile(
-              title: const Text('Rotating Host'),
-              subtitle: const Text('Host role rotates each round'),
-              value: _settings.rotatingHost,
-              activeTrackColor: AppColors.primary,
-              onChanged: (v) => setState(() => _settings.rotatingHost = v),
-            ),
-
-          const SizedBox(height: 24),
-
-          _plugin.buildSettingsScreen(_settings, (s) {
+          _plugin.buildSettingsScreen(context, _settings, (s) {
             setState(() => _settings = s);
           }),
-
           const SizedBox(height: 32),
           AppButton(
             label: 'Start Game',
@@ -75,35 +56,51 @@ class _GameSettingsScreenState extends ConsumerState<GameSettingsScreen> {
     );
   }
 
-  Widget _buildTimeSetting() {
+  Widget _ModeSelector() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            const Icon(Icons.settings, color: AppColors.primary),
+            const SizedBox(width: 12),
+            Text('Mode', style: Theme.of(context).textTheme.titleMedium),
+            const Spacer(),
+            SegmentedButton<GameMode>(
+              segments: const [
+                ButtonSegment(value: GameMode.roundBased, label: Text('Rounds')),
+                ButtonSegment(value: GameMode.timeBased, label: Text('Timed')),
+              ],
+              selected: {_settings.mode},
+              onSelectionChanged: (v) => setState(() => _settings.mode = v.first),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _RoundsSlider() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Round Time', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
+            Text('Rounds', style: Theme.of(context).textTheme.titleMedium),
             Row(
               children: [
-                const Icon(Icons.timer, color: AppColors.primary),
-                const SizedBox(width: 12),
+                const Icon(Icons.repeat, color: AppColors.primary),
                 Expanded(
                   child: Slider(
-                    value: _settings.roundTimeSeconds.toDouble(),
-                    min: 10,
-                    max: 300,
-                    divisions: 29,
+                    value: _settings.numberOfRounds.toDouble(),
+                    min: 1, max: 30, divisions: 29,
                     activeColor: AppColors.primary,
-                    label: '${_settings.roundTimeSeconds}s',
-                    onChanged: (v) =>
-                        setState(() => _settings.roundTimeSeconds = v.toInt()),
+                    label: '${_settings.numberOfRounds}',
+                    onChanged: (v) => setState(() => _settings.numberOfRounds = v.toInt()),
                   ),
                 ),
-                Text(
-                  '${_settings.roundTimeSeconds}s',
-                  style: const TextStyle(color: AppColors.textSecondary),
-                ),
+                Text('${_settings.numberOfRounds}'),
               ],
             ),
           ],
@@ -112,35 +109,56 @@ class _GameSettingsScreenState extends ConsumerState<GameSettingsScreen> {
     );
   }
 
-  Widget _buildRoundsSetting() {
+  Widget _TimeSlider() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Number of Rounds', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
+            Text('Time per Action', style: Theme.of(context).textTheme.titleMedium),
             Row(
               children: [
-                const Icon(Icons.repeat, color: AppColors.primary),
-                const SizedBox(width: 12),
+                const Icon(Icons.timer, color: AppColors.primary),
                 Expanded(
                   child: Slider(
-                    value: _settings.numberOfRounds.toDouble(),
-                    min: 1,
-                    max: 20,
-                    divisions: 19,
+                    value: _settings.roundTimeSeconds.toDouble(),
+                    min: 10, max: 300, divisions: 29,
                     activeColor: AppColors.primary,
-                    label: '${_settings.numberOfRounds}',
-                    onChanged: (v) =>
-                        setState(() => _settings.numberOfRounds = v.toInt()),
+                    label: '${_settings.roundTimeSeconds}s',
+                    onChanged: (v) => setState(() => _settings.roundTimeSeconds = v.toInt()),
                   ),
                 ),
-                Text(
-                  '${_settings.numberOfRounds}',
-                  style: const TextStyle(color: AppColors.textSecondary),
+                Text('${_settings.roundTimeSeconds}s'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _TurnsSlider() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Turns per Player', style: Theme.of(context).textTheme.titleMedium),
+            Row(
+              children: [
+                const Icon(Icons.swap_horiz, color: AppColors.primary),
+                Expanded(
+                  child: Slider(
+                    value: _settings.turnsPerPlayer.toDouble(),
+                    min: 1, max: 10, divisions: 9,
+                    activeColor: AppColors.primary,
+                    label: '${_settings.turnsPerPlayer}',
+                    onChanged: (v) => setState(() => _settings.turnsPerPlayer = v.toInt()),
+                  ),
                 ),
+                Text('${_settings.turnsPerPlayer}'),
               ],
             ),
           ],

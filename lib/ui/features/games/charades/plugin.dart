@@ -1,6 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:party_game/ui/features/game_engine/game_core.dart';
 import 'package:party_game/ui/features/game_engine/game_plugin.dart';
 import 'package:party_game/ui/features/games/charades/play.dart';
+
+class CharadesLogic extends GameLogic {
+  @override
+  final GameContext context;
+  @override
+  bool get isFinished => false;
+
+  CharadesLogic(this.context);
+
+  @override
+  void init() {}
+
+  @override
+  void handleAction(String action, {Map<String, dynamic>? payload}) {}
+
+  @override
+  void tick() {}
+
+  @override
+  Map<String, dynamic> get state => {};
+}
 
 class CharadesPlugin implements GamePlugin {
   @override
@@ -17,18 +39,21 @@ class CharadesPlugin implements GamePlugin {
 
   @override
   GameSettings get defaultSettings => GameSettings(
-        roundTimeSeconds: 60,
         numberOfRounds: 10,
+        turnsPerPlayer: 1,
       );
 
   @override
   Widget buildSettingsScreen(
-      GameSettings settings, ValueChanged<GameSettings> onChanged) {
+      BuildContext context, GameSettings settings, ValueChanged<GameSettings> onChanged) {
     return const SizedBox();
   }
 
   @override
-  Widget buildPlayScreen(GameContext context) {
+  GameLogic createLogic(GameContext context) => CharadesLogic(context);
+
+  @override
+  Widget buildUI(GameLogic logic, GameContext context) {
     return CharadesPlayScreen(context: context);
   }
 }

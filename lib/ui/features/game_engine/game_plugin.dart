@@ -1,33 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:party_game/core/connection/connection_service.dart';
 import 'package:party_game/data/models/player.dart';
-
-class GameSettings {
-  int roundTimeSeconds;
-  int numberOfRounds;
-  bool hostMode;
-  bool rotatingHost;
-  String? currentHostId;
-  Map<String, dynamic> extra;
-
-  GameSettings({
-    this.roundTimeSeconds = 60,
-    this.numberOfRounds = 3,
-    this.hostMode = false,
-    this.rotatingHost = false,
-    this.currentHostId,
-    Map<String, dynamic>? extra,
-  }) : extra = extra ?? {};
-
-  GameSettings copy() => GameSettings(
-        roundTimeSeconds: roundTimeSeconds,
-        numberOfRounds: numberOfRounds,
-        hostMode: hostMode,
-        rotatingHost: rotatingHost,
-        currentHostId: currentHostId,
-        extra: Map.from(extra),
-      );
-}
+import 'package:party_game/ui/features/game_engine/game_core.dart';
 
 class GameContext {
   final List<Player> players;
@@ -47,12 +21,22 @@ class GameContext {
   });
 }
 
+abstract class GameLogic {
+  GameContext get context;
+  bool get isFinished;
+
+  void init();
+  void handleAction(String action, {Map<String, dynamic>? payload});
+  void tick(); // called every second for timer
+}
+
 abstract class GamePlugin {
   String get id;
   String get name;
   IconData get icon;
   String get description;
   GameSettings get defaultSettings;
-  Widget buildSettingsScreen(GameSettings settings, ValueChanged<GameSettings> onChanged);
-  Widget buildPlayScreen(GameContext context);
+  Widget buildSettingsScreen(BuildContext context, GameSettings settings, ValueChanged<GameSettings> onChanged);
+  GameLogic createLogic(GameContext context);
+  Widget buildUI(GameLogic logic, GameContext context);
 }

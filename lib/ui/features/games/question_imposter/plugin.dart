@@ -1,6 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:party_game/ui/features/game_engine/game_core.dart';
 import 'package:party_game/ui/features/game_engine/game_plugin.dart';
 import 'package:party_game/ui/features/games/question_imposter/play.dart';
+
+class QuestionImposterLogic extends GameLogic {
+  @override
+  final GameContext context;
+  @override
+  bool get isFinished => false;
+
+  QuestionImposterLogic(this.context);
+
+  @override
+  void init() {}
+
+  @override
+  void handleAction(String action, {Map<String, dynamic>? payload}) {}
+
+  @override
+  void tick() {}
+
+  @override
+  Map<String, dynamic> get state => {};
+}
 
 class QuestionImposterPlugin implements GamePlugin {
   @override
@@ -17,18 +39,23 @@ class QuestionImposterPlugin implements GamePlugin {
 
   @override
   GameSettings get defaultSettings => GameSettings(
-        roundTimeSeconds: 90,
         numberOfRounds: 5,
+        numberOfImposters: 1,
+        turnsPerPlayer: 1,
       );
 
   @override
   Widget buildSettingsScreen(
-      GameSettings settings, ValueChanged<GameSettings> onChanged) {
+      BuildContext context, GameSettings settings, ValueChanged<GameSettings> onChanged) {
     return const SizedBox();
   }
 
   @override
-  Widget buildPlayScreen(GameContext context) {
+  GameLogic createLogic(GameContext context) =>
+      QuestionImposterLogic(context);
+
+  @override
+  Widget buildUI(GameLogic logic, GameContext context) {
     return QuestionImposterPlayScreen(context: context);
   }
 }
