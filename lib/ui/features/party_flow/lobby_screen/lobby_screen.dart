@@ -24,10 +24,9 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
   void _addPlayer() {
     final name = _nameController.text.trim();
     if (name.isEmpty) return;
-
-    final repo = ref.read(playerRepositoryProvider);
-    final isHost = repo.players.isEmpty;
-    repo.addPlayer(name, isHost: isHost);
+    final players = ref.read(playerRepositoryProvider);
+    final isHost = players.isEmpty;
+    ref.read(playerRepositoryProvider.notifier).addPlayer(name, isHost: isHost);
 
     if (ref.read(connectionTypeProvider) == ConnectionType.passAndPlay) {
       final conn = ref.read(connectionServiceProvider);
@@ -41,8 +40,8 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
   }
 
   void _startGame() {
-    final repo = ref.read(playerRepositoryProvider);
-    if (repo.players.isEmpty) return;
+    final players = ref.read(playerRepositoryProvider);
+    if (players.isEmpty) return;
     context.push('/game-select');
   }
 
@@ -54,8 +53,7 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final repo = ref.watch(playerRepositoryProvider);
-    final players = repo.players;
+    final players = ref.watch(playerRepositoryProvider);
 
     return AppScaffold(
       title: 'Party Lobby',
@@ -135,7 +133,9 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
                           trailing: IconButton(
                             icon: const Icon(Icons.close,
                                 color: AppColors.textHint),
-                            onPressed: () => repo.removePlayer(player.id),
+                            onPressed: () => ref
+                                .read(playerRepositoryProvider.notifier)
+                                .removePlayer(player.id),
                           ),
                         );
                       },

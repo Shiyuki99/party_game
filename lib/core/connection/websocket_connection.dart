@@ -8,7 +8,6 @@ import 'package:party_game/data/models/connection_type.dart';
 class WebSocketConnectionService extends ConnectionService {
   WebSocket? _ws;
   HttpServer? _server;
-  bool _isHost = false;
 
   final _onMessageController = StreamController<NetworkMessage>.broadcast();
   final _onPlayerJoinController = StreamController<Player>.broadcast();

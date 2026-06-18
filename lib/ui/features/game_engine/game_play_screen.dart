@@ -52,7 +52,7 @@ class _GamePlayScreenState extends ConsumerState<GamePlayScreen> {
       );
     }
 
-    final players = ref.read(playerRepositoryProvider).players;
+    final players = ref.read(playerRepositoryProvider);
     final connection = ref.read(connectionServiceProvider);
     final scoreboard = ref.read(scoreboardServiceProvider);
     final content = ref.read(contentRepositoryProvider).getContent(widget.gameId) ?? {};

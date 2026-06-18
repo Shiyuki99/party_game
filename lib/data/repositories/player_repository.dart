@@ -2,10 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:party_game/data/models/player.dart';
 import 'package:uuid/uuid.dart';
 
-class PlayerRepository {
-  final List<Player> _players = [];
-
-  List<Player> get players => List.unmodifiable(_players);
+class PlayerRepository extends Notifier<List<Player>> {
+  @override
+  List<Player> build() => [];
 
   Player addPlayer(String name, {bool isHost = false}) {
     final player = Player(
@@ -13,19 +12,18 @@ class PlayerRepository {
       name: name,
       isHost: isHost,
     );
-    _players.add(player);
+    state = [...state, player];
     return player;
   }
 
   void removePlayer(String id) {
-    _players.removeWhere((p) => p.id == id);
+    state = state.where((p) => p.id != id).toList();
   }
 
-  void clear() {
-    _players.clear();
-  }
+  void clear() => state = [];
 }
 
-final playerRepositoryProvider = Provider<PlayerRepository>((ref) {
-  return PlayerRepository();
-});
+final playerRepositoryProvider =
+    NotifierProvider<PlayerRepository, List<Player>>(
+  PlayerRepository.new,
+);
