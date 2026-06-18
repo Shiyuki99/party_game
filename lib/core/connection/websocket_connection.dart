@@ -34,8 +34,6 @@ class WebSocketConnectionService extends ConnectionService {
   /// Host starts a WebSocket server
   @override
   Future<void> initialize({required bool isHost}) async {
-    _isHost = isHost;
-
     if (isHost) {
       _server = await HttpServer.bind(InternetAddress.anyIPv4, 0);
       _hostPort = _server!.port;
