@@ -1,28 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:party_game/ui/features/game_engine/game_core.dart';
 import 'package:party_game/ui/features/game_engine/game_plugin.dart';
-import 'package:party_game/ui/features/games/question_imposter/play.dart';
-
-class QuestionImposterLogic extends GameLogic {
-  @override
-  final GameContext context;
-  @override
-  bool get isFinished => false;
-
-  QuestionImposterLogic(this.context);
-
-  @override
-  void init() {}
-
-  @override
-  void handleAction(String action, {Map<String, dynamic>? payload}) {}
-
-  @override
-  void tick() {}
-
-  @override
-  Map<String, dynamic> get state => {};
-}
+import 'package:party_game/ui/features/games/question_imposter/logic.dart';
+import 'package:party_game/ui/features/games/question_imposter/screen.dart';
 
 class QuestionImposterPlugin implements GamePlugin {
   @override
@@ -55,7 +35,7 @@ class QuestionImposterPlugin implements GamePlugin {
       QuestionImposterLogic(context);
 
   @override
-  Widget buildUI(GameLogic logic, GameContext context) {
-    return QuestionImposterPlayScreen(context: context);
+  Widget buildScreen(GameLogic logic, GameContext context) {
+    return QuestionImposterScreen(context: context);
   }
 }

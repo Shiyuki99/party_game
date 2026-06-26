@@ -1,0 +1,14 @@
+{
+  "imposter": {
+    "hash": "abc123"
+  },
+  "truth_or_dare": {
+    "hash": "def456"
+  },
+  "question_imposter": {
+    "hash": "ghi789"
+  },
+  "charades": {
+    "hash": "jkl012"
+  }
+}

@@ -1,32 +1,30 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:party_game/data/models/player.dart';
-import 'package:party_game/ui/core/theme/app_theme.dart';
 import 'package:party_game/ui/core/widgets/app_button.dart';
-import 'package:party_game/ui/core/widgets/player_avatar.dart';
+import 'package:party_game/ui/core/widgets/game/game_player_card.dart';
 import 'package:party_game/ui/features/game_engine/game_plugin.dart';
 import 'package:party_game/ui/features/games/truth_or_dare/models.dart';
 
-enum _GamePhase { spinning, chooseType, questioning }
+enum _ToDPhase { spinning, chooseType, questioning }
 
-class TruthOrDarePlayScreen extends StatefulWidget {
+class TruthOrDareScreen extends StatefulWidget {
   final GameContext context;
   final TruthOrDareSettings gameSettings;
 
-  const TruthOrDarePlayScreen({
+  const TruthOrDareScreen({
     super.key,
     required this.context,
     required this.gameSettings,
   });
 
   @override
-  State<TruthOrDarePlayScreen> createState() => _TruthOrDarePlayScreenState();
+  State<TruthOrDareScreen> createState() => _TruthOrDareScreenState();
 }
 
-class _TruthOrDarePlayScreenState extends State<TruthOrDarePlayScreen> {
+class _TruthOrDareScreenState extends State<TruthOrDareScreen> {
   late List<Player> _availablePlayers;
-  int _currentRound = 0;
-  _GamePhase _phase = _GamePhase.spinning;
+  _ToDPhase _phase = _ToDPhase.spinning;
   String? _selectedAnswerer;
   String? _selectedAsker;
   AnswerType? _chosenType;
@@ -47,12 +45,12 @@ class _TruthOrDarePlayScreenState extends State<TruthOrDarePlayScreen> {
   }
 
   void _loadContent() {
-    final content = widget.context.content;
-    if (content['truths'] is List) {
-      _truths.addAll((content['truths'] as List).cast<String>());
+    final c = widget.context.content;
+    if (c['truths'] is List) {
+      _truths.addAll((c['truths'] as List).cast<String>());
     }
-    if (content['dares'] is List) {
-      _dares.addAll((content['dares'] as List).cast<String>());
+    if (c['dares'] is List) {
+      _dares.addAll((c['dares'] as List).cast<String>());
     }
     _truths.addAll(_defaultTruths);
     _dares.addAll(_defaultDares);
@@ -61,12 +59,9 @@ class _TruthOrDarePlayScreenState extends State<TruthOrDarePlayScreen> {
   void _spin() {
     final players = _availablePlayers;
     if (players.length < 2) return;
-
     List<Player> candidates;
     if (widget.gameSettings.everyoneOncePerRound) {
-      candidates = players
-          .where((p) => !_askedThisRound.contains(p.id))
-          .toList();
+      candidates = players.where((p) => !_askedThisRound.contains(p.id)).toList();
       if (candidates.length < 2) {
         _askedThisRound.clear();
         candidates = List.from(players);
@@ -74,40 +69,33 @@ class _TruthOrDarePlayScreenState extends State<TruthOrDarePlayScreen> {
     } else {
       candidates = List.from(players);
     }
-
     if (widget.gameSettings.lastPlayerCantAsk && _lastAsker != null) {
       candidates.removeWhere((p) => p.id == _lastAsker);
     }
-
     candidates.shuffle(_rng);
     final answerer = candidates.removeAt(0);
     String? asker;
-
     if (widget.gameSettings.noRepeatAsker && _lastAsker != null) {
-      final askerCandidates = candidates.where((p) => p.id != _lastAsker).toList();
-      asker = askerCandidates.isNotEmpty
-          ? askerCandidates[_rng.nextInt(askerCandidates.length)].id
-          : candidates[_rng.nextInt(candidates.length)].id;
+      final ac = candidates.where((p) => p.id != _lastAsker).toList();
+      asker = ac.isNotEmpty ? ac[_rng.nextInt(ac.length)].id : candidates[_rng.nextInt(candidates.length)].id;
     } else {
       asker = candidates[_rng.nextInt(candidates.length)].id;
     }
-
     if (widget.gameSettings.everyoneOncePerRound) {
       _askedThisRound.add(answerer.id);
     }
-
     _lastAsker = asker;
     setState(() {
       _selectedAnswerer = answerer.id;
       _selectedAsker = asker;
-      _phase = _GamePhase.chooseType;
+      _phase = _ToDPhase.chooseType;
     });
   }
 
   void _chooseType(AnswerType type) {
     setState(() {
       _chosenType = type;
-      _phase = _GamePhase.questioning;
+      _phase = _ToDPhase.questioning;
     });
   }
 
@@ -120,17 +108,15 @@ class _TruthOrDarePlayScreenState extends State<TruthOrDarePlayScreen> {
   void _nextRound() {
     setState(() {
       _chosenType = null;
-      _phase = _GamePhase.spinning;
+      _phase = _ToDPhase.spinning;
     });
     _spin();
   }
 
   @override
   Widget build(BuildContext context) {
-    final answerer = widget.context.players
-        .firstWhere((p) => p.id == _selectedAnswerer);
-    final asker = widget.context.players
-        .firstWhere((p) => p.id == _selectedAsker);
+    final answerer = widget.context.players.firstWhere((p) => p.id == _selectedAnswerer);
+    final asker = widget.context.players.firstWhere((p) => p.id == _selectedAsker);
     final answererIdx = widget.context.players.indexOf(answerer);
     final askerIdx = widget.context.players.indexOf(asker);
 
@@ -139,14 +125,13 @@ class _TruthOrDarePlayScreenState extends State<TruthOrDarePlayScreen> {
       child: Column(
         children: [
           const SizedBox(height: 20),
-          Text('Round ${_currentRound + 1}',
+          Text(_phase == _ToDPhase.questioning ? '' : 'Spin!',
               style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 40),
-
-          if (_phase == _GamePhase.chooseType) ...[
+          if (_phase == _ToDPhase.chooseType) ...[
             Text('Questioner', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
-            PlayerAvatar(name: asker.name, index: askerIdx, size: 64),
+            GamePlayerCard(player: asker, index: askerIdx, avatarSize: 64),
             const SizedBox(height: 32),
             Text('Choose', style: Theme.of(context).textTheme.displayLarge),
             const SizedBox(height: 24),
@@ -155,7 +140,6 @@ class _TruthOrDarePlayScreenState extends State<TruthOrDarePlayScreen> {
                 Expanded(
                   child: AppButton(
                     label: 'Truth',
-                    color: AppColors.accent,
                     onPressed: () => _chooseType(AnswerType.truth),
                   ),
                 ),
@@ -163,18 +147,16 @@ class _TruthOrDarePlayScreenState extends State<TruthOrDarePlayScreen> {
                 Expanded(
                   child: AppButton(
                     label: 'Dare',
-                    color: AppColors.secondary,
                     onPressed: () => _chooseType(AnswerType.dare),
                   ),
                 ),
               ],
             ),
           ],
-
-          if (_phase == _GamePhase.questioning) ...[
+          if (_phase == _ToDPhase.questioning) ...[
             Text('Answerer', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
-            PlayerAvatar(name: answerer.name, index: answererIdx, size: 80),
+            GamePlayerCard(player: answerer, index: answererIdx, avatarSize: 80),
             const SizedBox(height: 16),
             Card(
               child: Padding(
@@ -187,15 +169,10 @@ class _TruthOrDarePlayScreenState extends State<TruthOrDarePlayScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              'Asked by ${asker.name}',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
+            Text('Asked by ${asker.name}',
+                style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: 32),
-            AppButton(
-              label: 'Next Round',
-              onPressed: _nextRound,
-            ),
+            AppButton(label: 'Next Round', onPressed: _nextRound),
           ],
         ],
       ),

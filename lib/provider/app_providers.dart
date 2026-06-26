@@ -41,11 +41,13 @@ final contentServiceProvider = Provider<ContentService>((ref) {
   final client = ref.watch(httpClientProvider);
   final contentBox = Hive.box('game_content');
   final settingsBox = Hive.box('app_settings');
-  return ContentService(
+  final service = ContentService(
     client: client,
     contentBox: contentBox,
     settingsBox: settingsBox,
   );
+  service.init();
+  return service;
 });
 
 final contentRepositoryProvider = Provider<ContentRepository>((ref) {

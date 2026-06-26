@@ -96,7 +96,7 @@ class _GamePlayScreenState extends ConsumerState<GamePlayScreen> {
 
     return Scaffold(
       body: SafeArea(
-        child: _plugin.buildUI(_logic, _logic.context),
+        child: _plugin.buildScreen(_logic, _logic.context),
       ),
     );
   }

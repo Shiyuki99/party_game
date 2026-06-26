@@ -21,13 +21,13 @@ class GameContext {
   });
 }
 
-abstract class GameLogic {
+abstract class GameLogic extends ChangeNotifier {
   GameContext get context;
   bool get isFinished;
 
   void init();
   void handleAction(String action, {Map<String, dynamic>? payload});
-  void tick(); // called every second for timer
+  void tick();
 }
 
 abstract class GamePlugin {
@@ -36,7 +36,8 @@ abstract class GamePlugin {
   IconData get icon;
   String get description;
   GameSettings get defaultSettings;
-  Widget buildSettingsScreen(BuildContext context, GameSettings settings, ValueChanged<GameSettings> onChanged);
+  Widget buildSettingsScreen(
+      BuildContext context, GameSettings settings, ValueChanged<GameSettings> onChanged);
   GameLogic createLogic(GameContext context);
-  Widget buildUI(GameLogic logic, GameContext context);
+  Widget buildScreen(GameLogic logic, GameContext context);
 }

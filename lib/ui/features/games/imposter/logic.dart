@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:party_game/ui/features/game_engine/game_core.dart';
 import 'package:party_game/ui/features/game_engine/game_plugin.dart';
 
-enum ImposterPhase { setup, revealRole, submitting, voting, result }
+enum ImposterPhase { revealRole, submitting, voting, result }
 
 class ImposterState {
   final ImposterPhase phase;
@@ -13,13 +13,13 @@ class ImposterState {
   final int currentRevealIndex;
   final int currentSubmitterIndex;
   final int currentSubmitRound;
-  final Map<int, List<String>> submissions; // playerIndex -> keywords
-  final Map<int, int> votes; // voterIndex -> votedIndex
+  final Map<int, List<String>> submissions;
+  final Map<int, int> votes;
   final String? resultMessage;
   final int remainingTime;
 
   const ImposterState({
-    this.phase = ImposterPhase.setup,
+    this.phase = ImposterPhase.revealRole,
     this.order,
     this.roles,
     this.activeCategory,
@@ -56,8 +56,7 @@ class ImposterState {
         currentRevealIndex: currentRevealIndex ?? this.currentRevealIndex,
         currentSubmitterIndex:
             currentSubmitterIndex ?? this.currentSubmitterIndex,
-        currentSubmitRound:
-            currentSubmitRound ?? this.currentSubmitRound,
+        currentSubmitRound: currentSubmitRound ?? this.currentSubmitRound,
         submissions: submissions ?? this.submissions,
         votes: votes ?? this.votes,
         resultMessage: resultMessage ?? this.resultMessage,
@@ -86,18 +85,36 @@ class ImposterLogic extends GameLogic {
       playerIds: ids,
       imposters: context.settings.numberOfImposters.clamp(1, ids.length - 1),
     );
-    final cats = _categories;
+
+    final cats = _loadCategories();
     final cat = cats[_rng.nextInt(cats.length)];
+    final word = _pickWordForCategory(cat);
 
     _state = ImposterState(
       phase: ImposterPhase.revealRole,
       order: order,
       roles: roles,
       activeCategory: cat,
-      activeWord: _wordForCategory(cat),
+      activeWord: word,
       currentRevealIndex: 0,
       remainingTime: context.settings.roundTimeSeconds,
     );
+    notifyListeners();
+  }
+
+  List<String> _loadCategories() {
+    final categories = context.content['categories'] as Map<String, dynamic>?;
+    if (categories == null || categories.isEmpty) return [];
+    return categories.keys.toList();
+  }
+
+  String _pickWordForCategory(String cat) {
+    final categories = context.content['categories'] as Map<String, dynamic>?;
+    final words = categories?[cat] as List<dynamic>?;
+    if (words != null && words.isNotEmpty) {
+      return words[_rng.nextInt(words.length)] as String;
+    }
+    return '';
   }
 
   void revealNext() {
@@ -112,6 +129,7 @@ class ImposterLogic extends GameLogic {
         currentSubmitRound: 0,
       );
     }
+    notifyListeners();
   }
 
   void submitKeyword(String keyword) {
@@ -143,6 +161,7 @@ class ImposterLogic extends GameLogic {
         currentSubmitterIndex: nextIdx,
       );
     }
+    notifyListeners();
   }
 
   void castVote(int voterIdx, int votedIdx) {
@@ -154,6 +173,7 @@ class ImposterLogic extends GameLogic {
     } else {
       _state = _state.copyWith(votes: updated);
     }
+    notifyListeners();
   }
 
   void _resolveVotes(Map<int, int> votes) {
@@ -204,7 +224,8 @@ class ImposterLogic extends GameLogic {
       case 'submit_keyword':
         submitKeyword(payload?['keyword'] as String? ?? '');
       case 'vote':
-        castVote(payload?['voterIdx'] as int? ?? 0,
+        castVote(
+            payload?['voterIdx'] as int? ?? 0,
             payload?['votedIdx'] as int? ?? 0);
     }
   }
@@ -213,33 +234,7 @@ class ImposterLogic extends GameLogic {
   void tick() {
     if (_state.remainingTime > 0) {
       _state = _state.copyWith(remainingTime: _state.remainingTime - 1);
+      notifyListeners();
     }
-  }
-
-  @override
-  Map<String, dynamic> get state => {
-    'phase': _state.phase.name,
-    'currentRevealIndex': _state.currentRevealIndex,
-    'currentSubmitterIndex': _state.currentSubmitterIndex,
-    'currentSubmitRound': _state.currentSubmitRound,
-    'activeCategory': _state.activeCategory,
-    'activeWord': _state.activeWord,
-  };
-
-  static final _categories = [
-    'Food', 'Animals', 'Movies', 'Countries', 'Sports', 'Video Games',
-  ];
-
-  String _wordForCategory(String cat) {
-    final pool = <String, List<String>>{
-      'Food': ['Pizza', 'Sushi', 'Chocolate', 'Pasta', 'Ice Cream'],
-      'Animals': ['Elephant', 'Penguin', 'Dolphin', 'Giraffe', 'Kangaroo'],
-      'Movies': ['Inception', 'Avatar', 'Titanic', 'Joker', 'Gladiator'],
-      'Countries': ['Japan', 'Brazil', 'Egypt', 'Canada', 'Australia'],
-      'Sports': ['Soccer', 'Basketball', 'Tennis', 'Swimming', 'Boxing'],
-      'Video Games': ['Minecraft', 'Tetris', 'Zelda', 'Mario', 'Portal'],
-    };
-    final words = pool[cat] ?? ['Unknown'];
-    return words[_rng.nextInt(words.length)];
   }
 }

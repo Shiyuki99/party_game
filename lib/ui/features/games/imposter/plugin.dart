@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:party_game/ui/core/theme/app_theme.dart';
 import 'package:party_game/ui/features/game_engine/game_core.dart';
 import 'package:party_game/ui/features/game_engine/game_plugin.dart';
-import 'package:party_game/ui/features/games/imposter/game.dart';
-import 'package:party_game/ui/features/games/imposter/ui.dart';
+import 'package:party_game/ui/features/games/imposter/logic.dart';
+import 'package:party_game/ui/features/games/imposter/screen.dart';
 
 class ImposterPlugin implements GamePlugin {
   @override
@@ -65,7 +65,7 @@ class ImposterPlugin implements GamePlugin {
   GameLogic createLogic(GameContext context) => ImposterLogic(context);
 
   @override
-  Widget buildUI(GameLogic logic, GameContext context) {
-    return ImposterUI(logic: logic as ImposterLogic, context: context);
+  Widget buildScreen(GameLogic logic, GameContext context) {
+    return ImposterScreen(logic: logic as ImposterLogic, context: context);
   }
 }

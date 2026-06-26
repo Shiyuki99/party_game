@@ -1,0 +1,10 @@
+{
+  "categories": {
+    "Food": ["Pizza", "Sushi", "Chocolate", "Pasta", "Ice Cream", "Tacos", "Burger", "Ramen", "Croissant", "Sashimi"],
+    "Animals": ["Elephant", "Penguin", "Dolphin", "Giraffe", "Kangaroo", "Octopus", "Flamingo", "Cheetah", "Orca", "Chameleon"],
+    "Movies": ["Inception", "Avatar", "Titanic", "Joker", "Gladiator", "Interstellar", "Parasite", "Coco", "Frozen", "Dune"],
+    "Countries": ["Japan", "Brazil", "Egypt", "Canada", "Australia", "Iceland", "Thailand", "Morocco", "Peru", "Vietnam"],
+    "Sports": ["Soccer", "Basketball", "Tennis", "Swimming", "Boxing", "Fencing", "Surfing", "Archery", "Skiing", "Judo"],
+    "Video Games": ["Minecraft", "Tetris", "Zelda", "Mario", "Portal", "Elden Ring", "Stardew Valley", "Hades", "Celeste", "Hollow Knight"]
+  }
+}

@@ -1,23 +1,20 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:party_game/ui/core/theme/app_theme.dart';
 import 'package:party_game/ui/core/widgets/app_button.dart';
-import 'package:party_game/ui/core/widgets/player_avatar.dart';
+import 'package:party_game/ui/core/widgets/game/game_player_card.dart';
 import 'package:party_game/ui/features/game_engine/game_plugin.dart';
 
 enum _QiPhase { revealRole, answer, vote, result }
 
-class QuestionImposterPlayScreen extends StatefulWidget {
+class QuestionImposterScreen extends StatefulWidget {
   final GameContext context;
-  const QuestionImposterPlayScreen({super.key, required this.context});
+  const QuestionImposterScreen({super.key, required this.context});
 
   @override
-  State<QuestionImposterPlayScreen> createState() =>
-      _QuestionImposterPlayScreenState();
+  State<QuestionImposterScreen> createState() => _QuestionImposterScreenState();
 }
 
-class _QuestionImposterPlayScreenState
-    extends State<QuestionImposterPlayScreen> {
+class _QuestionImposterScreenState extends State<QuestionImposterScreen> {
   final _rng = Random();
   late int _imposterIndex;
   String _question = '';
@@ -96,7 +93,6 @@ class _QuestionImposterPlayScreenState
     counts.forEach((pid, c) {
       if (c > max) { max = c; top = pid; }
     });
-
     final imposterCaught = top == _imposterIndex;
     _resultMsg = imposterCaught ? 'Imposter caught!' : 'Imposter wins!';
     if (imposterCaught) {
@@ -126,18 +122,17 @@ class _QuestionImposterPlayScreenState
       child: Column(
         children: [
           if (_phase == _QiPhase.revealRole) ...[
-            const Spacer(),
             Text('Player ${_currentPlayerIndex + 1}',
                 style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
-            PlayerAvatar(name: current.name, index: _currentPlayerIndex, size: 80),
+            GamePlayerCard(player: current, index: _currentPlayerIndex, avatarSize: 80),
             const SizedBox(height: 32),
             if (current.id == players[_imposterIndex].id) ...[
               Text('You are the IMPOSTER!',
                   style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.error)),
+                      color: Colors.red)),
               const SizedBox(height: 16),
               Text('Everyone else has a question. Make up a believable answer.',
                   style: Theme.of(context).textTheme.bodyMedium),
@@ -157,7 +152,6 @@ class _QuestionImposterPlayScreenState
             const SizedBox(height: 32),
             AppButton(
                 label: 'Got it', onPressed: () => setState(() => _phase = _QiPhase.answer)),
-            const Spacer(),
           ],
           if (_phase == _QiPhase.answer) ...[
             Text('${current.name}, answer:',
@@ -190,22 +184,15 @@ class _QuestionImposterPlayScreenState
             Expanded(
               child: ListView.builder(
                 itemCount: players.length,
-                itemBuilder: (ctx, i) => Card(
-                  color: _votedFor == i ? AppColors.primary : null,
-                  child: ListTile(
-                    leading: PlayerAvatar(name: players[i].name, index: i),
-                    title: Text(players[i].name),
-                    subtitle: _answers.containsKey(i)
-                        ? Text('"${_answers[i]}"',
-                            style: const TextStyle(
-                                color: AppColors.textSecondary))
-                        : null,
-                    trailing: _votedFor == i
-                        ? const Icon(Icons.check_circle,
-                            color: AppColors.accent)
-                        : null,
-                    onTap: () => setState(() => _votedFor = i),
-                  ),
+                itemBuilder: (ctx, i) => GamePlayerCard(
+                  player: players[i],
+                  index: i,
+                  isSelected: _votedFor == i,
+                  subtitle: _answers.containsKey(i) ? '"${_answers[i]}"' : null,
+                  trailing: _votedFor == i
+                      ? const Icon(Icons.check_circle, color: Colors.green)
+                      : null,
+                  onTap: () => setState(() => _votedFor = i),
                 ),
               ),
             ),
@@ -215,19 +202,17 @@ class _QuestionImposterPlayScreenState
             ),
           ],
           if (_phase == _QiPhase.result) ...[
-            const Spacer(),
             Text(_resultMsg!,
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: _resultMsg!.contains('caught')
-                      ? AppColors.success
-                      : AppColors.error,
+                      ? Colors.green
+                      : Colors.red,
                 )),
             const SizedBox(height: 16),
             Text('Imposter: ${players[_imposterIndex].name}',
                 style: Theme.of(context).textTheme.titleLarge),
-            const Spacer(),
             AppButton(label: 'Next Round', onPressed: _nextRound),
           ],
         ],

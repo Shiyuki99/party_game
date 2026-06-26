@@ -1,28 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:party_game/ui/features/game_engine/game_core.dart';
 import 'package:party_game/ui/features/game_engine/game_plugin.dart';
-import 'package:party_game/ui/features/games/charades/play.dart';
-
-class CharadesLogic extends GameLogic {
-  @override
-  final GameContext context;
-  @override
-  bool get isFinished => false;
-
-  CharadesLogic(this.context);
-
-  @override
-  void init() {}
-
-  @override
-  void handleAction(String action, {Map<String, dynamic>? payload}) {}
-
-  @override
-  void tick() {}
-
-  @override
-  Map<String, dynamic> get state => {};
-}
+import 'package:party_game/ui/features/games/charades/logic.dart';
+import 'package:party_game/ui/features/games/charades/screen.dart';
 
 class CharadesPlugin implements GamePlugin {
   @override
@@ -53,7 +33,7 @@ class CharadesPlugin implements GamePlugin {
   GameLogic createLogic(GameContext context) => CharadesLogic(context);
 
   @override
-  Widget buildUI(GameLogic logic, GameContext context) {
-    return CharadesPlayScreen(context: context);
+  Widget buildScreen(GameLogic logic, GameContext context) {
+    return CharadesScreen(context: context);
   }
 }
