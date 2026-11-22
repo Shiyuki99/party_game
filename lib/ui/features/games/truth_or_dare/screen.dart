@@ -1,203 +1,260 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:party_game/data/models/player.dart';
+import 'package:party_game/ui/core/theme/app_theme.dart';
 import 'package:party_game/ui/core/widgets/app_button.dart';
+import 'package:party_game/ui/core/widgets/game/game_phase_header.dart';
 import 'package:party_game/ui/core/widgets/game/game_player_card.dart';
+import 'package:party_game/ui/core/widgets/game/game_result_display.dart';
 import 'package:party_game/ui/features/game_engine/game_plugin.dart';
+import 'package:party_game/ui/features/games/truth_or_dare/logic.dart';
 import 'package:party_game/ui/features/games/truth_or_dare/models.dart';
 
-enum _ToDPhase { spinning, chooseType, questioning }
-
-class TruthOrDareScreen extends StatefulWidget {
+class TruthOrDareScreen extends StatelessWidget {
+  final TruthOrDareLogic logic;
   final GameContext context;
-  final TruthOrDareSettings gameSettings;
 
   const TruthOrDareScreen({
     super.key,
+    required this.logic,
     required this.context,
-    required this.gameSettings,
   });
 
   @override
-  State<TruthOrDareScreen> createState() => _TruthOrDareScreenState();
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: logic,
+      builder: (ctx, _) {
+        final state = logic.gameState;
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          switchInCurve: Curves.easeOut,
+          child: switch (state.phase) {
+            TruthDarePhase.choose => _ChoosePhase(
+                key: const ValueKey('choose'),
+                logic: logic,
+                state: state,
+                players: this.context.players,
+              ),
+            TruthDarePhase.prompt => _PromptPhase(
+                key: const ValueKey('prompt'),
+                logic: logic,
+                state: state,
+                players: this.context.players,
+              ),
+            _ => _FinishedPhase(key: const ValueKey('finished'), logic: logic),
+          },
+        );
+      },
+    );
+  }
 }
 
-class _TruthOrDareScreenState extends State<TruthOrDareScreen> {
-  late List<Player> _availablePlayers;
-  _ToDPhase _phase = _ToDPhase.spinning;
-  String? _selectedAnswerer;
-  String? _selectedAsker;
-  AnswerType? _chosenType;
+class _ChoosePhase extends StatelessWidget {
+  final TruthOrDareLogic logic;
+  final TruthDareState state;
+  final List<Player> players;
 
-  final _truths = <String>[];
-  final _dares = <String>[];
-  final _askedThisRound = <String>{};
-  String? _lastAsker;
-
-  final _rng = Random();
-
-  @override
-  void initState() {
-    super.initState();
-    _availablePlayers = List.from(widget.context.players);
-    _loadContent();
-    _spin();
-  }
-
-  void _loadContent() {
-    final c = widget.context.content;
-    if (c['truths'] is List) {
-      _truths.addAll((c['truths'] as List).cast<String>());
-    }
-    if (c['dares'] is List) {
-      _dares.addAll((c['dares'] as List).cast<String>());
-    }
-    _truths.addAll(_defaultTruths);
-    _dares.addAll(_defaultDares);
-  }
-
-  void _spin() {
-    final players = _availablePlayers;
-    if (players.length < 2) return;
-    List<Player> candidates;
-    if (widget.gameSettings.everyoneOncePerRound) {
-      candidates = players.where((p) => !_askedThisRound.contains(p.id)).toList();
-      if (candidates.length < 2) {
-        _askedThisRound.clear();
-        candidates = List.from(players);
-      }
-    } else {
-      candidates = List.from(players);
-    }
-    if (widget.gameSettings.lastPlayerCantAsk && _lastAsker != null) {
-      candidates.removeWhere((p) => p.id == _lastAsker);
-    }
-    candidates.shuffle(_rng);
-    final answerer = candidates.removeAt(0);
-    String? asker;
-    if (widget.gameSettings.noRepeatAsker && _lastAsker != null) {
-      final ac = candidates.where((p) => p.id != _lastAsker).toList();
-      asker = ac.isNotEmpty ? ac[_rng.nextInt(ac.length)].id : candidates[_rng.nextInt(candidates.length)].id;
-    } else {
-      asker = candidates[_rng.nextInt(candidates.length)].id;
-    }
-    if (widget.gameSettings.everyoneOncePerRound) {
-      _askedThisRound.add(answerer.id);
-    }
-    _lastAsker = asker;
-    setState(() {
-      _selectedAnswerer = answerer.id;
-      _selectedAsker = asker;
-      _phase = _ToDPhase.chooseType;
-    });
-  }
-
-  void _chooseType(AnswerType type) {
-    setState(() {
-      _chosenType = type;
-      _phase = _ToDPhase.questioning;
-    });
-  }
-
-  String _getContent(AnswerType type) {
-    final pool = type == AnswerType.truth ? _truths : _dares;
-    if (pool.isEmpty) return type == AnswerType.truth ? 'Tell the truth!' : 'Do a dare!';
-    return pool[_rng.nextInt(pool.length)];
-  }
-
-  void _nextRound() {
-    setState(() {
-      _chosenType = null;
-      _phase = _ToDPhase.spinning;
-    });
-    _spin();
-  }
+  const _ChoosePhase({
+    super.key,
+    required this.logic,
+    required this.state,
+    required this.players,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final answerer = widget.context.players.firstWhere((p) => p.id == _selectedAnswerer);
-    final asker = widget.context.players.firstWhere((p) => p.id == _selectedAsker);
-    final answererIdx = widget.context.players.indexOf(answerer);
-    final askerIdx = widget.context.players.indexOf(asker);
+    final answerer = players.firstWhere((p) => p.id == state.answererId);
+    final asker = players.firstWhere((p) => p.id == state.askerId);
 
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          const SizedBox(height: 20),
-          Text(_phase == _ToDPhase.questioning ? '' : 'Spin!',
-              style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 40),
-          if (_phase == _ToDPhase.chooseType) ...[
-            Text('Questioner', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            GamePlayerCard(player: asker, index: askerIdx, avatarSize: 64),
-            const SizedBox(height: 32),
-            Text('Choose', style: Theme.of(context).textTheme.displayLarge),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    label: 'Truth',
-                    onPressed: () => _chooseType(AnswerType.truth),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: AppButton(
-                    label: 'Dare',
-                    onPressed: () => _chooseType(AnswerType.dare),
-                  ),
-                ),
-              ],
-            ),
-          ],
-          if (_phase == _ToDPhase.questioning) ...[
-            Text('Answerer', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            GamePlayerCard(player: answerer, index: answererIdx, avatarSize: 80),
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  _getContent(_chosenType!),
-                  style: Theme.of(context).textTheme.titleLarge,
-                  textAlign: TextAlign.center,
+          GamePhaseHeader(
+            title: 'Truth or Dare',
+            subtitle: '${asker.name} asks · ${answerer.name} answers',
+            round: state.round,
+            totalRounds: state.totalRounds,
+          ),
+          const Spacer(),
+          GamePlayerCard(
+            player: answerer,
+            index: players.indexOf(answerer),
+            avatarSize: 88,
+            subtitle: 'Your choice',
+          ),
+          const SizedBox(height: 32),
+          Text('Pick one!', style: Theme.of(context).textTheme.displayMedium),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                  label: 'Truth',
+                  icon: Icons.chat_bubble_outline,
+                  color: AppColors.accent,
+                  onPressed: () => logic.choose(AnswerType.truth),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Text('Asked by ${asker.name}',
-                style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 32),
-            AppButton(label: 'Next Round', onPressed: _nextRound),
+              const SizedBox(width: 16),
+              Expanded(
+                child: AppButton(
+                  label: 'Dare',
+                  icon: Icons.bolt,
+                  color: AppColors.secondary,
+                  onPressed: () => logic.choose(AnswerType.dare),
+                ),
+              ),
+            ],
+          ),
+          if (TruthOrDareSettings.fromExtra(logic.context.settings.extra)
+              .allowCustomContent) ...[
+            const SizedBox(height: 16),
+            _CustomInput(logic: logic),
           ],
+          const Spacer(),
         ],
       ),
     );
   }
 }
 
-const _defaultTruths = [
-  'What is your biggest fear?',
-  'Have you ever lied to a friend?',
-  'What is the most embarrassing thing you\'ve done?',
-  'Who do you secretly admire?',
-  'What is your guilty pleasure?',
-  'Have you ever cheated in a game?',
-  'What is the worst gift you\'ve received?',
-  'What is a secret you\'ve never told anyone?',
-];
+class _CustomInput extends StatefulWidget {
+  final TruthOrDareLogic logic;
+  const _CustomInput({required this.logic});
 
-const _defaultDares = [
-  'Do 10 push-ups',
-  'Sing a song loudly',
-  'Speak in an accent for 1 minute',
-  'Let someone draw on your face',
-  'Dance for 30 seconds',
-  'Call a friend and say "I love you"',
-  'Hold your breath for 15 seconds',
-  'Do your best animal impression',
-];
+  @override
+  State<_CustomInput> createState() => _CustomInputState();
+}
+
+class _CustomInputState extends State<_CustomInput> {
+  final _controller = TextEditingController();
+  AnswerType _type = AnswerType.truth;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Text('Add your own:'),
+                const SizedBox(width: 8),
+                SegmentedButton<AnswerType>(
+                  segments: const [
+                    ButtonSegment(value: AnswerType.truth, label: Text('Truth')),
+                    ButtonSegment(value: AnswerType.dare, label: Text('Dare')),
+                  ],
+                  selected: {_type},
+                  onSelectionChanged: (v) => setState(() => _type = v.first),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: const InputDecoration(hintText: 'Write a prompt...'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  tooltip: 'Add prompt',
+                  onPressed: () {
+                    widget.logic.addCustom(_type, _controller.text);
+                    _controller.clear();
+                  },
+                  icon: const Icon(Icons.add),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PromptPhase extends StatelessWidget {
+  final TruthOrDareLogic logic;
+  final TruthDareState state;
+  final List<Player> players;
+
+  const _PromptPhase({
+    super.key,
+    required this.logic,
+    required this.state,
+    required this.players,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final answerer = players.firstWhere((p) => p.id == state.answererId);
+    final isTruth = state.choice == AnswerType.truth;
+
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          GamePhaseHeader(
+            title: isTruth ? 'Truth' : 'Dare',
+            subtitle: '${answerer.name}, it is your turn',
+            round: state.round,
+            totalRounds: state.totalRounds,
+          ),
+          const Spacer(),
+          Card(
+            color: isTruth
+                ? AppColors.accent.withValues(alpha: 0.12)
+                : AppColors.secondary.withValues(alpha: 0.12),
+            child: Padding(
+              padding: const EdgeInsets.all(28),
+              child: Text(
+                state.prompt ?? '',
+                style: Theme.of(context).textTheme.headlineSmall,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          const Spacer(),
+          AppButton(
+            label: 'Done — Next Round',
+            icon: Icons.check,
+            onPressed: () => logic.handleAction('complete'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FinishedPhase extends StatelessWidget {
+  final TruthOrDareLogic logic;
+
+  const _FinishedPhase({super.key, required this.logic});
+
+  @override
+  Widget build(BuildContext context) {
+    final state = logic.gameState;
+    return GameResultDisplay(
+      message: '${state.totalRounds} rounds completed!',
+      success: true,
+      details: {
+        'Prompts completed': '${state.earnedPoints}',
+        'Bravery points': '+${state.earnedPoints}',
+      },
+      buttonLabel: 'See Final Scores',
+      onButton: () => logic.handleAction('finish'),
+    );
+  }
+}

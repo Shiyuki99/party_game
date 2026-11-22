@@ -3,8 +3,7 @@ import 'package:party_game/core/content/content_service.dart';
 class ContentRepository {
   final ContentService _contentService;
 
-  ContentRepository({required ContentService contentService})
-      : _contentService = contentService;
+  ContentRepository({required this._contentService});
 
   Future<bool> checkForUpdates() => _contentService.checkForUpdates();
 

@@ -1,10 +1,12 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:party_game/data/repositories/player_repository.dart';
 import 'package:party_game/provider/app_providers.dart';
-import 'package:party_game/ui/core/widgets/app_scaffold.dart';
 import 'package:party_game/ui/features/game_engine/game_core.dart';
+import 'package:party_game/ui/features/game_engine/game_end_screen.dart';
 import 'package:party_game/ui/features/game_engine/game_plugin.dart';
 import 'package:party_game/ui/features/game_engine/game_registry.dart';
 
@@ -19,6 +21,7 @@ class GamePlayScreen extends ConsumerStatefulWidget {
 
 class _GamePlayScreenState extends ConsumerState<GamePlayScreen> {
   late GamePlugin _plugin;
+  late GameSettings _settings;
   late GameLogic _logic;
   Timer? _timer;
   bool _gameEnded = false;
@@ -27,42 +30,78 @@ class _GamePlayScreenState extends ConsumerState<GamePlayScreen> {
   void initState() {
     super.initState();
     _plugin = gamePlugins.firstWhere((g) => g.id == widget.gameId);
-    _initGame();
+    _settings = ref
+        .read(activeGameSettingsProvider.notifier)
+        .of(widget.gameId, _plugin.defaultSettings);
+    _startGame();
   }
 
-  void _initGame() {
+  void _startGame() {
     final players = ref.read(playerRepositoryProvider);
     final connection = ref.read(connectionServiceProvider);
     final scoreboard = ref.read(scoreboardServiceProvider);
-    final content = ref.read(contentRepositoryProvider).getContent(widget.gameId) ?? {};
+    final content =
+        ref.read(contentRepositoryProvider).getContent(widget.gameId) ?? {};
 
+    _gameEnded = false;
     _logic = _plugin.createLogic(
       GameContext(
         players: players,
         connection: connection,
         content: content,
-        settings: _plugin.defaultSettings,
+        settings: _plugin.defaultSettings.copy()
+          ..mode = _settings.mode
+          ..roundTimeSeconds = _settings.roundTimeSeconds
+          ..numberOfRounds = _settings.numberOfRounds
+          ..turnsPerPlayer = _settings.turnsPerPlayer
+          ..numberOfImposters = _settings.numberOfImposters
+          ..rotatingHost = _settings.rotatingHost
+          ..extra = Map.from(_settings.extra),
         addScore: (playerId, points) => scoreboard.addScore(playerId, points),
         onGameEnd: _handleGameEnd,
       ),
     );
     _logic.init();
 
-    if (_plugin.defaultSettings.mode == GameMode.timeBased) {
+    _timer?.cancel();
+    if (_settings.mode == GameMode.timeBased) {
       _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (mounted) {
-          setState(() => _logic.tick());
-          if (_logic.isFinished) _handleGameEnd();
-        }
+        if (mounted) _logic.tick();
       });
     }
-
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   void _handleGameEnd() {
     _timer?.cancel();
-    setState(() => _gameEnded = true);
+    if (mounted) setState(() => _gameEnded = true);
+  }
+
+  Future<void> _confirmLeave() async {
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Leave game?'),
+        content: const Text('Your current progress in this game will be lost.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Stay'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Leave'),
+          ),
+        ],
+      ),
+    );
+    if (leave == true && mounted) context.pop();
+  }
+
+  void _newParty() {
+    ref.read(playerRepositoryProvider.notifier).clear();
+    ref.read(scoreboardServiceProvider).reset();
+    context.go('/');
   }
 
   @override
@@ -74,29 +113,33 @@ class _GamePlayScreenState extends ConsumerState<GamePlayScreen> {
   @override
   Widget build(BuildContext context) {
     if (_gameEnded) {
-      return AppScaffold(
-        title: 'Game Over',
-        body: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Game Over!',
-                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () =>
-                    Navigator.of(context).popUntil((route) => route.isFirst),
-                child: const Text('Back to Menu'),
-              ),
-            ],
-          ),
-        ),
+      return GameEndScreen(
+        gameName: _plugin.name,
+        onPlayAgain: _startGame,
+        onOtherGames: () => context.go('/game-select'),
+        onNewParty: _newParty,
       );
     }
 
-    return Scaffold(
-      body: SafeArea(
-        child: _plugin.buildScreen(_logic, _logic.context),
+    return PopScope<Object?>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmLeave();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_plugin.name),
+          leading: IconButton(
+            tooltip: 'Leave game',
+            icon: const Icon(Icons.arrow_back_ios),
+            onPressed: _confirmLeave,
+          ),
+        ),
+        body: SafeArea(
+          child: SizedBox.expand(
+            child: _plugin.buildScreen(_logic, _logic.context),
+          ),
+        ),
       ),
     );
   }

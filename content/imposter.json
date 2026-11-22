@@ -1,10 +1,94 @@
 {
   "categories": {
-    "Food": ["Pizza", "Sushi", "Chocolate", "Pasta", "Ice Cream", "Tacos", "Burger", "Ramen", "Croissant", "Sashimi"],
-    "Animals": ["Elephant", "Penguin", "Dolphin", "Giraffe", "Kangaroo", "Octopus", "Flamingo", "Cheetah", "Orca", "Chameleon"],
-    "Movies": ["Inception", "Avatar", "Titanic", "Joker", "Gladiator", "Interstellar", "Parasite", "Coco", "Frozen", "Dune"],
-    "Countries": ["Japan", "Brazil", "Egypt", "Canada", "Australia", "Iceland", "Thailand", "Morocco", "Peru", "Vietnam"],
-    "Sports": ["Soccer", "Basketball", "Tennis", "Swimming", "Boxing", "Fencing", "Surfing", "Archery", "Skiing", "Judo"],
-    "Video Games": ["Minecraft", "Tetris", "Zelda", "Mario", "Portal", "Elden Ring", "Stardew Valley", "Hades", "Celeste", "Hollow Knight"]
+    "Food": [
+      "Pizza", "Sushi", "Chocolate", "Pasta", "Ice Cream", "Tacos",
+      "Burger", "Ramen", "Croissant", "Sashimi", "Curry", "Pancakes",
+      "Waffles", "Salad", "Soup", "Popcorn", "Pretzel", "Sandwich",
+      "Dumplings", "Noodles", "Toast", "Omelet"
+    ],
+    "Animals": [
+      "Elephant", "Penguin", "Dolphin", "Giraffe", "Kangaroo", "Octopus",
+      "Flamingo", "Cheetah", "Orca", "Chameleon", "Lion", "Tiger",
+      "Bear", "Wolf", "Panda", "Koala", "Sloth", "Otter",
+      "Turtle", "Frog", "Eagle", "Shark"
+    ],
+    "Movies": [
+      "Inception", "Avatar", "Titanic", "Joker", "Gladiator", "Interstellar",
+      "Parasite", "Coco", "Frozen", "Dune", "Casablanca", "Jurassic Park",
+      "The Matrix", "Toy Story", "Finding Nemo", "The Lion King", "Spirited Away", "Paddington",
+      "Moana", "Up", "Shrek", "Aladdin"
+    ],
+    "Countries": [
+      "Japan", "Brazil", "Egypt", "Canada", "Australia", "Iceland",
+      "Thailand", "Morocco", "Peru", "Vietnam", "France", "Italy",
+      "Spain", "Germany", "India", "Mexico", "Norway", "Kenya",
+      "Greece", "Turkey", "Sweden", "Chile"
+    ],
+    "Sports": [
+      "Soccer", "Basketball", "Tennis", "Swimming", "Boxing", "Fencing",
+      "Surfing", "Archery", "Skiing", "Judo", "Volleyball", "Baseball",
+      "Golf", "Hockey", "Rugby", "Cycling", "Skating", "Karate",
+      "Rowing", "Sailing", "Cricket", "Badminton"
+    ],
+    "Video Games": [
+      "Minecraft", "Tetris", "Zelda", "Mario", "Portal", "Elden Ring",
+      "Stardew Valley", "Hades", "Celeste", "Hollow Knight", "Pac-Man", "Sonic",
+      "Fortnite", "Among Us", "Overcooked", "Rocket League", "Pokemon", "Animal Crossing",
+      "Candy Crush", "Kirby", "Donkey Kong", "Undertale"
+    ],
+    "Vehicles": [
+      "Car", "Bicycle", "Bus", "Train", "Airplane", "Helicopter",
+      "Boat", "Submarine", "Motorcycle", "Truck", "Tractor", "Taxi",
+      "Ambulance", "Fire Truck", "Police Car", "Spaceship", "Hot Air Balloon", "Canoe",
+      "Scooter", "Roller Skates", "Skateboard", "Rocket"
+    ],
+    "Occupations": [
+      "Doctor", "Teacher", "Chef", "Engineer", "Artist", "Pilot",
+      "Police Officer", "Firefighter", "Farmer", "Baker", "Dentist", "Lawyer",
+      "Scientist", "Musician", "Actor", "Waiter", "Librarian", "Mechanic",
+      "Architect", "Photographer", "Nurse", "Veterinarian"
+    ],
+    "Music": [
+      "Piano", "Guitar", "Violin", "Drums", "Flute", "Trumpet",
+      "Cello", "Bass", "Saxophone", "Harp", "Banjo", "Accordion",
+      "Clarinet", "Trombone", "Ukulele", "Harmonica", "Xylophone", "Organ",
+      "Bagpipes", "Triangle", "Tambourine", "Maracas"
+    ],
+    "Nature": [
+      "Mountain", "Ocean", "Forest", "River", "Desert", "Waterfall",
+      "Volcano", "Island", "Canyon", "Lake", "Beach", "Cave",
+      "Glacier", "Rainforest", "Valley", "Cliff", "Reef", "Tundra",
+      "Prairie", "Marsh", "Spring", "Plateau"
+    ],
+    "Household Objects": [
+      "Chair", "Table", "Lamp", "Sofa", "Bed", "Clock",
+      "Mirror", "Broom", "Mop", "Toaster", "Kettle", "Blender",
+      "Vacuum", "Fan", "Heater", "Bookshelf", "Curtain", "Pillow",
+      "Blanket", "Plate", "Cup", "Umbrella"
+    ],
+    "Desserts": [
+      "Cake", "Ice Cream", "Cookie", "Brownie", "Cupcake", "Pie",
+      "Donut", "Chocolate", "Candy", "Pudding", "Muffin", "Waffle",
+      "Pancake", "Cheesecake", "Gelato", "Sundae", "Tart", "Eclair",
+      "Macaron", "Toffee", "Fudge", "Sorbet"
+    ],
+    "Board Games": [
+      "Chess", "Checkers", "Monopoly", "Scrabble", "Clue", "Risk",
+      "Chutes and Ladders", "Candy Land", "Catan", "Ticket to Ride", "Battleship", "Connect Four",
+      "Jenga", "Uno", "Dominoes", "Guess Who", "Trouble", "Sequence",
+      "Othello", "Backgammon", "Yahtzee", "Pictionary"
+    ],
+    "Cities": [
+      "Paris", "London", "Tokyo", "New York", "Rome", "Cairo",
+      "Sydney", "Dubai", "Moscow", "Beijing", "Barcelona", "Amsterdam",
+      "Vienna", "Toronto", "Singapore", "Seoul", "Bangkok", "Istanbul",
+      "Prague", "Lisbon", "Chicago", "Los Angeles"
+    ],
+    "Famous Landmarks": [
+      "Eiffel Tower", "Statue of Liberty", "Great Wall", "Pyramids", "Colosseum", "Big Ben",
+      "Taj Mahal", "Sydney Opera House", "Mount Rushmore", "Arc de Triomphe", "Leaning Tower", "Brandenburg Gate",
+      "Sphinx", "Stonehenge", "Golden Gate Bridge", "Machu Picchu", "Christ the Redeemer", "Tower of London",
+      "Petra", "Angkor Wat", "Chichen Itza", "Niagara Falls", "Burj Khalifa", "Louvre Museum"
+    ]
   }
 }

@@ -8,6 +8,7 @@ import 'package:party_game/core/scoreboard/scoreboard_service.dart';
 import 'package:party_game/data/models/connection_type.dart';
 import 'package:party_game/data/models/party_type.dart';
 import 'package:party_game/data/services/content_repository.dart';
+import 'package:party_game/ui/features/game_engine/game_core.dart';
 
 class ConnectionTypeNotifier extends Notifier<ConnectionType> {
   @override
@@ -41,13 +42,11 @@ final contentServiceProvider = Provider<ContentService>((ref) {
   final client = ref.watch(httpClientProvider);
   final contentBox = Hive.box('game_content');
   final settingsBox = Hive.box('app_settings');
-  final service = ContentService(
+  return ContentService(
     client: client,
     contentBox: contentBox,
     settingsBox: settingsBox,
   );
-  service.init();
-  return service;
 });
 
 final contentRepositoryProvider = Provider<ContentRepository>((ref) {
@@ -70,3 +69,19 @@ class HostIdNotifier extends Notifier<String?> {
 }
 final hostIdProvider =
     NotifierProvider<HostIdNotifier, String?>(HostIdNotifier.new);
+
+/// Settings chosen on the settings screen, keyed by game id. Consumed by the
+/// play screen so tweaks made by the host actually reach the game logic.
+class ActiveGameSettingsNotifier extends Notifier<Map<String, GameSettings>> {
+  @override
+  Map<String, GameSettings> build() => const {};
+
+  void set(String gameId, GameSettings settings) =>
+      state = {...state, gameId: settings};
+
+  GameSettings of(String gameId, GameSettings fallback) =>
+      state[gameId] ?? fallback;
+}
+final activeGameSettingsProvider =
+    NotifierProvider<ActiveGameSettingsNotifier, Map<String, GameSettings>>(
+        ActiveGameSettingsNotifier.new);

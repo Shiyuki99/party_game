@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:party_game/ui/core/theme/app_theme.dart';
 import 'package:party_game/ui/core/widgets/app_button.dart';
 import 'package:party_game/ui/core/widgets/game/game_phase_header.dart';
 import 'package:party_game/ui/core/widgets/game/game_player_card.dart';
 import 'package:party_game/ui/core/widgets/game/game_result_display.dart';
 import 'package:party_game/ui/core/widgets/game/game_text_field.dart';
 import 'package:party_game/ui/core/widgets/game/game_vote_board.dart';
+import 'package:party_game/ui/features/game_engine/game_core.dart';
 import 'package:party_game/ui/features/game_engine/game_plugin.dart';
 import 'package:party_game/ui/features/games/imposter/logic.dart';
 
@@ -20,158 +22,233 @@ class ImposterScreen extends StatelessWidget {
       listenable: logic,
       builder: (ctx, _) {
         final state = logic.gameState;
-        switch (state.phase) {
-          case ImposterPhase.revealRole:
-            return _RevealPhase(logic: logic, state: state, ctx: ctx);
-          case ImposterPhase.submitting:
-            return _SubmitPhase(logic: logic, state: state, ctx: ctx);
-          case ImposterPhase.voting:
-            return _VotePhase(logic: logic, state: state, ctx: ctx);
-          case ImposterPhase.result:
-            return _ResultPhase(logic: logic, state: state, ctx: ctx);
-        }
+        final timed = this.context.settings.mode == GameMode.timeBased;
+        final child = switch (state.phase) {
+          ImposterPhase.revealRole => _RevealPhase(
+              logic: logic,
+              state: state,
+              remainingTime: timed ? state.remainingTime : null,
+            ),
+          ImposterPhase.submitting => _SubmitPhase(
+              logic: logic,
+              state: state,
+              remainingTime: timed ? state.remainingTime : null,
+            ),
+          ImposterPhase.voting => _VotePhase(
+              logic: logic,
+              state: state,
+              remainingTime: timed ? state.remainingTime : null,
+            ),
+          ImposterPhase.roundResult =>
+            _RoundResultPhase(logic: logic, state: state),
+          ImposterPhase.finished => _FinishedPhase(logic: logic),
+        };
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          switchInCurve: Curves.easeOut,
+          child: child,
+        );
       },
     );
   }
 }
 
-class _RevealPhase extends StatelessWidget {
+class _RevealPhase extends StatefulWidget {
   final ImposterLogic logic;
   final ImposterState state;
-  final BuildContext ctx;
+  final int? remainingTime;
 
   const _RevealPhase({
     required this.logic,
     required this.state,
-    required this.ctx,
+    required this.remainingTime,
   });
 
   @override
+  State<_RevealPhase> createState() => _RevealPhaseState();
+}
+
+class _RevealPhaseState extends State<_RevealPhase> {
+  bool _revealed = false;
+
+  @override
+  void didUpdateWidget(covariant _RevealPhase oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.state.currentRevealIndex !=
+        widget.state.currentRevealIndex) {
+      setState(() => _revealed = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final player = logic.context.players[state.currentRevealIndex];
-    final isImposter =
-        state.roles?.hasRole(player.id, 'imposter') ?? false;
-    final category = state.activeCategory ?? '';
+    final state = widget.state;
+    final players = widget.logic.context.players;
+    final player = players[state.currentRevealIndex];
+    final isImposter = state.roles?.hasRole(player.id, 'imposter') ?? false;
 
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
           GamePhaseHeader(
-            title: 'Role Reveal',
-            subtitle:
-                'Player ${state.currentRevealIndex + 1}/${logic.context.players.length}',
-            remainingTime: state.remainingTime,
+            title: 'Secret Roles',
+            subtitle: 'Player ${state.currentRevealIndex + 1}/${players.length}',
+            round: state.round,
+            totalRounds: state.totalRounds,
+            remainingTime: widget.remainingTime,
           ),
           const Spacer(),
           GamePlayerCard(
             player: player,
             index: state.currentRevealIndex,
-            avatarSize: 80,
+            avatarSize: 88,
+            subtitle: 'Pass the device to ${player.name}',
           ),
           const SizedBox(height: 24),
-          if (currentIsViewing(state.currentRevealIndex)) ...[
-            Text(
-              isImposter ? 'YOU ARE THE IMPOSTER!' : 'Category: $category',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: isImposter ? Colors.red : Colors.green,
+          if (!_revealed)
+            AppButton(
+              label: 'I\'m Ready — Reveal',
+              icon: Icons.visibility,
+              onPressed: () => setState(() => _revealed = true),
+            )
+          else
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: isImposter
+                    ? AppColors.error.withValues(alpha: 0.15)
+                    : AppColors.accent.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    isImposter ? Icons.theater_comedy : Icons.groups_outlined,
+                    size: 40,
+                    color: isImposter ? AppColors.error : AppColors.accent,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    isImposter ? 'YOU ARE THE IMPOSTER' : 'YOU ARE A CITIZEN',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: isImposter ? AppColors.error : AppColors.accent,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  if (isImposter)
+                    Text(
+                      'Blend in! Category: ${state.activeCategory}',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    )
+                  else ...[
+                    Text('Category: ${state.activeCategory}',
+                        style: Theme.of(context).textTheme.bodyMedium),
+                    const SizedBox(height: 8),
+                    Text(state.activeWord ?? '',
+                        style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                              color: AppColors.accent,
+                            ),
+                        textAlign: TextAlign.center),
+                  ],
+                ],
               ),
             ),
-            if (!isImposter && state.activeWord != null) ...[
-              const SizedBox(height: 8),
-              Text('Word: ${state.activeWord}',
-                  style: const TextStyle(fontSize: 18)),
-            ],
-            if (isImposter) ...[
-              const SizedBox(height: 16),
-              Text(
-                  'Try to blend in with the other players.\nCategory: $category',
-                  textAlign: TextAlign.center),
-            ],
-          ] else ...[
-            const Text('Pass the device to this player.',
-                style: TextStyle(fontSize: 16)),
-          ],
           const Spacer(),
-          AppButton(
-            label: state.currentRevealIndex < logic.context.players.length - 1
-                ? 'Next Player'
-                : 'Start Game',
-            onPressed: () => logic.handleAction('reveal_next'),
-          ),
+          if (_revealed)
+            AppButton(
+              label: state.currentRevealIndex < players.length - 1
+                  ? 'Next Player'
+                  : 'Start Giving Clues',
+              icon: Icons.arrow_forward,
+              onPressed: () => widget.logic.handleAction('reveal_next'),
+            ),
         ],
       ),
     );
   }
-
-  bool currentIsViewing(int idx) => true;
 }
 
-class _SubmitPhase extends StatelessWidget {
+class _SubmitPhase extends StatefulWidget {
   final ImposterLogic logic;
   final ImposterState state;
-  final BuildContext ctx;
+  final int? remainingTime;
 
   const _SubmitPhase({
     required this.logic,
     required this.state,
-    required this.ctx,
+    required this.remainingTime,
   });
 
   @override
+  State<_SubmitPhase> createState() => _SubmitPhaseState();
+}
+
+class _SubmitPhaseState extends State<_SubmitPhase> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+    widget.logic.handleAction('submit_keyword', payload: {'keyword': text});
+    _controller.clear();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final player = logic.context.players[state.currentSubmitterIndex];
-    final controller = TextEditingController();
+    final state = widget.state;
+    final players = widget.logic.context.players;
+    final player = players[state.currentSubmitterIndex];
+    final total =
+        players.length * widget.logic.context.settings.turnsPerPlayer;
+    final submitted = state.submissions.values.fold<int>(
+      0,
+      (sum, list) => sum + list.length,
+    );
 
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
           GamePhaseHeader(
-            title: 'Keywords',
-            subtitle:
-                'Round ${state.currentSubmitRound + 1}/${logic.context.settings.turnsPerPlayer} - ${player.name}',
-            remainingTime: state.remainingTime,
+            title: 'Give a Clue',
+            subtitle: '${player.name} · round ${state.currentSubmitRound + 1}',
+            round: state.round,
+            totalRounds: state.totalRounds,
+            remainingTime: widget.remainingTime,
           ),
           const SizedBox(height: 16),
-          Text('Category: ${state.activeCategory ?? ""}'),
-          const SizedBox(height: 24),
+          Text('Category: ${state.activeCategory ?? ''}',
+              style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 4),
+          Text('Say one word that fits — not too obvious!',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center),
+          const Spacer(),
           GameTextField(
-            controller: controller,
-            hintText: 'Enter a keyword...',
+            controller: _controller,
+            hintText: 'Your keyword...',
             textInputAction: TextInputAction.done,
-            onSubmitted: (v) {
-              if (v.isNotEmpty) {
-                logic.handleAction('submit_keyword', payload: {'keyword': v});
-                controller.clear();
-              }
-            },
+            onSubmitted: (_) => _submit(),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           AppButton(
             label: 'Submit Keyword',
-            onPressed: () {
-              if (controller.text.isNotEmpty) {
-                logic.handleAction('submit_keyword',
-                    payload: {'keyword': controller.text});
-                controller.clear();
-              }
-            },
+            icon: Icons.send,
+            onPressed: _submit,
           ),
           const Spacer(),
-          if (state.submissions.isNotEmpty) ...[
-            Text('Submitted so far:',
-                style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
-            ...state.submissions.entries.expand((e) => e.value).map(
-                  (k) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text('- $k'),
-                  ),
-                ),
-          ],
+          Text('$submitted of $total clues given',
+              style: Theme.of(context).textTheme.bodyMedium),
         ],
       ),
     );
@@ -181,20 +258,23 @@ class _SubmitPhase extends StatelessWidget {
 class _VotePhase extends StatelessWidget {
   final ImposterLogic logic;
   final ImposterState state;
-  final BuildContext ctx;
+  final int? remainingTime;
 
   const _VotePhase({
     required this.logic,
     required this.state,
-    required this.ctx,
+    required this.remainingTime,
   });
 
   @override
   Widget build(BuildContext context) {
+    final players = logic.context.players;
     final voterIdx = state.votes.length;
-    final voter = voterIdx < logic.context.players.length
-        ? logic.context.players[voterIdx]
-        : null;
+    final voter = voterIdx < players.length ? players[voterIdx] : null;
+    final subtitles = <int, String>{};
+    for (final e in state.votes.entries) {
+      subtitles[e.value] = '${subtitles[e.value] ?? ''} ✓'.trim();
+    }
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -202,18 +282,33 @@ class _VotePhase extends StatelessWidget {
         children: [
           GamePhaseHeader(
             title: 'Vote',
-            subtitle: voter != null ? '${voter.name} votes' : 'All votes cast',
-            remainingTime: state.remainingTime,
+            subtitle: voter != null
+                ? '${voter.name}, pick the imposter'
+                : 'All votes are in',
+            round: state.round,
+            totalRounds: state.totalRounds,
+            remainingTime: remainingTime,
           ),
           const SizedBox(height: 16),
+          Text('Category: ${state.activeCategory}',
+              style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 12),
           Expanded(
             child: GameVoteBoard(
-              players: logic.context.players,
+              players: players,
               selectedIndex: null,
-              subtitles: _buildSubtitleMap(),
+              subtitles: subtitles,
               onVote: (i) {
-                logic.handleAction('vote',
-                    payload: {'voterIdx': voterIdx, 'votedIdx': i});
+                if (voter != null && i != voterIdx) {
+                  logic.handleAction('vote', payload: {
+                    'voterIdx': voterIdx,
+                    'votedIdx': i,
+                  });
+                } else if (i == voterIdx) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('You cannot vote for yourself.')),
+                  );
+                }
               },
             ),
           ),
@@ -221,34 +316,45 @@ class _VotePhase extends StatelessWidget {
       ),
     );
   }
-
-  Map<int, String> _buildSubtitleMap() {
-    final subs = <int, String>{};
-    for (final e in state.votes.entries) {
-      subs[e.key] = '→ ${logic.context.players[e.value].name}';
-    }
-    return subs;
-  }
 }
 
-class _ResultPhase extends StatelessWidget {
+class _RoundResultPhase extends StatelessWidget {
   final ImposterLogic logic;
   final ImposterState state;
-  final BuildContext ctx;
 
-  const _ResultPhase({
+  const _RoundResultPhase({
     required this.logic,
     required this.state,
-    required this.ctx,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isLast = state.round >= state.totalRounds;
     return GameResultDisplay(
-      message: state.resultMessage ?? 'Game Over',
-      success: state.resultMessage?.contains('caught') ?? false,
-      buttonLabel: 'End Game',
-      onButton: () => logic.context.onGameEnd(),
+      message: state.resultMessage ?? 'Round over',
+      success: state.imposterCaught,
+      details: {
+        'Word': state.activeWord ?? '',
+        'Category': state.activeCategory ?? '',
+      },
+      buttonLabel: isLast ? 'See Final Scores' : 'Next Round',
+      onButton: () => logic.handleAction('next_round'),
+    );
+  }
+}
+
+class _FinishedPhase extends StatelessWidget {
+  final ImposterLogic logic;
+
+  const _FinishedPhase({required this.logic});
+
+  @override
+  Widget build(BuildContext context) {
+    return GameResultDisplay(
+      message: '${logic.gameState.totalRounds} rounds played!',
+      success: true,
+      buttonLabel: 'See Final Scores',
+      onButton: () => logic.handleAction('finish'),
     );
   }
 }

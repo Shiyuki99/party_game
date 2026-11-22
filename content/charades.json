@@ -9,6 +9,24 @@
     "Bubble", "Lighthouse", "Cowboy", "Dinosaur", "Submarine",
     "Magician", "Rainbow", "Pirate Ship", "Baseball", "Butterfly",
     "Rocket", "Cactus", "Ghost", "Sushi", "Carnival",
-    "Snowboard", "Horseback", "Vampire", "Race Car", "Hot Air Balloon"
+    "Snowboard", "Horseback", "Vampire", "Race Car", "Hot Air Balloon",
+    "Lion", "Monkey", "Turtle", "Octopus", "Flamingo",
+    "Giraffe", "Sloth", "Bear", "Frog", "Eagle",
+    "Shark", "Dolphin", "Panda", "Rabbit", "Tiger",
+    "Toothbrush", "Umbrella", "Bicycle", "Telephone", "Television",
+    "Mirror", "Key", "Clock", "Lamp", "Chair",
+    "Vacuum Cleaner", "Washing Machine", "Blender", "Toaster", "Refrigerator",
+    "Signing a Contract", "Brushing Your Teeth", "Tying Your Shoes", "Taking a Selfie", "Climbing a Ladder",
+    "Swimming", "Dancing", "Singing", "Sleeping", "Eating",
+    "Drinking", "Running", "Jumping", "Fishing", "Cooking",
+    "Reading a Book", "Playing Piano", "Riding a Bike", "Driving a Car", "Flying a Kite",
+    "Ice Skating", "Skiing", "Boxing", "Golfing", "Yoga",
+    "Teacher", "Doctor", "Dentist", "Police Officer", "Baker",
+    "Farmer", "Pilot", "Singer", "Athlete", "Mechanic",
+    "Eiffel Tower", "Great Wall", "Pyramids", "Statue of Liberty", "Big Ben",
+    "The White House", "Colosseum", "Taj Mahal", "Sydney Opera House", "Mount Everest",
+    "Batman", "Spider-Man", "Mickey Mouse", "Elsa", "Harry Potter",
+    "Sherlock Holmes", "Wonder Woman", "Iron Man", "Mario", "Sonic",
+    "T-Rex", "King Kong", "Godzilla", "Santa Claus", "Easter Bunny"
   ]
 }

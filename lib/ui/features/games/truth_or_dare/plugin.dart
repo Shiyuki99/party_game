@@ -45,11 +45,9 @@ class TruthOrDarePlugin implements GamePlugin {
 
   @override
   Widget buildScreen(GameLogic logic, GameContext context) {
-    final gameSettings =
-        TruthOrDareSettings.fromExtra(context.settings.extra);
     return TruthOrDareScreen(
+      logic: logic as TruthOrDareLogic,
       context: context,
-      gameSettings: gameSettings,
     );
   }
 }

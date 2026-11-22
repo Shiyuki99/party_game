@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:party_game/ui/core/theme/app_theme.dart';
 import 'package:party_game/ui/features/game_engine/game_core.dart';
 import 'package:party_game/ui/features/game_engine/game_plugin.dart';
 import 'package:party_game/ui/features/games/question_imposter/logic.dart';
@@ -26,8 +27,46 @@ class QuestionImposterPlugin implements GamePlugin {
 
   @override
   Widget buildSettingsScreen(
-      BuildContext context, GameSettings settings, ValueChanged<GameSettings> onChanged) {
-    return const SizedBox();
+    BuildContext context,
+    GameSettings settings,
+    ValueChanged<GameSettings> onChanged,
+  ) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.person_off, color: AppColors.primary),
+                const SizedBox(width: 12),
+                Text('Imposters',
+                    style: Theme.of(context).textTheme.titleMedium),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Slider(
+              value: settings.numberOfImposters.toDouble(),
+              min: 1,
+              max: 3,
+              divisions: 2,
+              label: '${settings.numberOfImposters}',
+              onChanged: (v) {
+                final c = settings.copy();
+                c.numberOfImposters = v.toInt();
+                onChanged(c);
+              },
+            ),
+            Text(
+              'Imposters do not see the question and must bluff their way '
+              'through the answers.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -36,6 +75,9 @@ class QuestionImposterPlugin implements GamePlugin {
 
   @override
   Widget buildScreen(GameLogic logic, GameContext context) {
-    return QuestionImposterScreen(context: context);
+    return QuestionImposterScreen(
+      logic: logic as QuestionImposterLogic,
+      context: context,
+    );
   }
 }

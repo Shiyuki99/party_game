@@ -5,7 +5,7 @@ class ScoreboardService {
   final Map<String, int> _scores = {};
   final Box _persistBox;
 
-  ScoreboardService({required Box persistBox}) : _persistBox = persistBox;
+  ScoreboardService({required this._persistBox});
 
   Map<String, int> get scores => Map.unmodifiable(_scores);
 

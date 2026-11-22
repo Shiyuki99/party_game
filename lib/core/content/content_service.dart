@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:hive/hive.dart';
 
@@ -13,12 +15,10 @@ class ContentService {
   final Box _settingsBox;
 
   ContentService({
-    required http.Client client,
-    required Box contentBox,
-    required Box settingsBox,
-  })  : _client = client,
-        _contentBox = contentBox,
-        _settingsBox = settingsBox;
+    required this._client,
+    required this._contentBox,
+    required this._settingsBox,
+  });
 
   String get repoUrl =>
       _settingsBox.get(_settingsKey, defaultValue: defaultRepoUrl) as String;
@@ -26,7 +26,7 @@ class ContentService {
   set repoUrl(String url) => _settingsBox.put(_settingsKey, url);
 
   static const String defaultRepoUrl =
-      'https://raw.githubusercontent.com/Shiyuki99/party_game_content/main';
+      'https://raw.githubusercontent.com/Shiyuki99/party-game-content/main';
 
   static const _gameIds = [
     'imposter',
@@ -35,21 +35,23 @@ class ContentService {
     'charades',
   ];
 
+  /// Seeds the cache from the bundled assets. Network refresh is deliberately
+  /// separate (see [checkForUpdates]) so the app starts instantly offline.
   Future<void> init() async {
     for (final id in _gameIds) {
       final key = '$_contentKeyPrefix$id';
       if (_contentBox.get(key) != null) continue;
-      final data = await _fetchFromGitHub(id) ?? _loadLocalDevContent(id);
-      if (data != null) {
-        _contentBox.put(key, data);
-      }
+      final data = await _loadBundledContent(id);
+      if (data != null) await _contentBox.put(key, data);
     }
   }
 
   Future<Map<String, dynamic>?> _fetchFromGitHub(String gameId) async {
     try {
       final url = '$repoUrl/content/$gameId.json';
-      final response = await _client.get(Uri.parse(url));
+      final response = await _client.get(Uri.parse(url)).timeout(
+            const Duration(seconds: 8),
+          );
       if (response.statusCode == 200) {
         return jsonDecode(response.body) as Map<String, dynamic>;
       }
@@ -57,21 +59,28 @@ class ContentService {
     return null;
   }
 
-  Map<String, dynamic>? _loadLocalDevContent(String gameId) {
+  Future<Map<String, dynamic>?> _loadBundledContent(String gameId) async {
     try {
-      final file = File('content/$gameId.json');
-      if (!file.existsSync()) return null;
-      final raw = file.readAsStringSync();
+      final raw = await rootBundle.loadString('assets/content/$gameId.json');
       return jsonDecode(raw) as Map<String, dynamic>;
     } catch (_) {
-      return null;
+      // Dev fallback: running from the repository root without built assets.
+      try {
+        final file = File('content/$gameId.json');
+        if (!file.existsSync()) return null;
+        return jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+      } catch (_) {
+        return null;
+      }
     }
   }
 
   Future<bool> checkForUpdates() async {
     final manifestUrl = '$repoUrl/manifest.json';
     try {
-      final response = await _client.get(Uri.parse(manifestUrl));
+      final response = await _client.get(Uri.parse(manifestUrl)).timeout(
+            const Duration(seconds: 8),
+          );
       if (response.statusCode != 200) return false;
 
       final manifest = jsonDecode(response.body) as Map<String, dynamic>;
@@ -79,15 +88,16 @@ class ContentService {
 
       for (final entry in manifest.entries) {
         final gameId = entry.key;
-        final remoteHash = entry.value['hash'] as String;
+        final remoteHash = entry.value['hash'] as String?;
+        if (remoteHash == null) continue;
         final localHash =
             _contentBox.get('$_contentKeyPrefix$gameId$_etagSuffix');
 
         if (localHash != remoteHash) {
           final data = await _fetchFromGitHub(gameId);
           if (data != null) {
-            _contentBox.put('$_contentKeyPrefix$gameId', data);
-            _contentBox.put(
+            await _contentBox.put('$_contentKeyPrefix$gameId', data);
+            await _contentBox.put(
                 '$_contentKeyPrefix$gameId$_etagSuffix', remoteHash);
             hasUpdates = true;
           }
@@ -104,14 +114,8 @@ class ContentService {
     final cached =
         _contentBox.get('$_contentKeyPrefix$gameId') as Map<String, dynamic>?;
     if (cached != null) return cached;
-    final dev = _loadLocalDevContent(gameId);
-    if (dev != null) {
-      _contentBox.put('$_contentKeyPrefix$gameId', dev);
-    }
-    return dev;
+    return null;
   }
 
-  Future<void> clearCache() async {
-    await _contentBox.clear();
-  }
+  Future<void> clearCache() => _contentBox.clear();
 }

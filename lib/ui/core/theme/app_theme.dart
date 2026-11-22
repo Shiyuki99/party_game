@@ -17,7 +17,7 @@ class AppColors {
 
   static const textPrimary = Color(0xFFEEEEEE);
   static const textSecondary = Color(0xFFA0A0B0);
-  static const textHint = Color(0xFF6A6A7A);
+  static const textHint = Color(0xFF8A8A9E);
 
   static const success = Color(0xFF4CAF50);
   static const warning = Color(0xFFFFC107);
@@ -59,6 +59,12 @@ class AppTheme {
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
           ),
+          displaySmall: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            height: 1.3,
+            color: AppColors.textPrimary,
+          ),
           headlineLarge: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w600,
@@ -67,6 +73,13 @@ class AppTheme {
           headlineMedium: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
+            height: 1.3,
+            color: AppColors.textPrimary,
+          ),
+          headlineSmall: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            height: 1.35,
             color: AppColors.textPrimary,
           ),
           titleLarge: TextStyle(
@@ -77,6 +90,11 @@ class AppTheme {
           titleMedium: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
+            color: AppColors.textPrimary,
+          ),
+          titleSmall: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
           ),
           bodyLarge: TextStyle(
@@ -91,6 +109,16 @@ class AppTheme {
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
+          ),
+          labelMedium: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
+          bodySmall: TextStyle(
+            fontSize: 12,
+            height: 1.5,
+            color: AppColors.textSecondary,
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
